@@ -1,0 +1,51 @@
+
+## Clear
+
+```{r}
+rm(list = ls())
+
+gc()
+```
+
+# Librarys
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(sf)
+library(stringr)
+library(mapview)
+library(ggspatial)
+library(units)
+```
+
+# Carga de datos
+
+```{r}
+Siniestros <- read_sf("base_siniestros.geojson")
+Departamentos <- read_sf("Departamentos/departamentos_Polygons.shp")
+```
+
+# Visualizamos las dos capas
+
+```{r}
+ggplot()+
+  geom_sf(data = Departamentos)+
+  geom_sf(data = Siniestros,aes(color = Gravedad))+
+  scale_color_manual(values = c("#FF0800","#FFAE00","#F0FF00","#00C61E"))
+```
+
+Observamos que quedaron bien cargadas ambas capas pero con esta visualizacion poco podemos concluir.
+
+Si bien la base de datos tiene el nombre de cada departamento no podemos cruzarlos para poder graficar en el poligono
+
+```{r}
+Departamentos <- Departamentos %>%
+  select(admlnm) %>%
+  rename(Nombre = admlnm)
+
+sf_use_s2(FALSE)
+
+Siniestros <- st_intersection(Siniestros,Departamentos)
+```
+
