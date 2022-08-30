@@ -1,0 +1,146 @@
+
+# Limpiamos la memoria y el enviroment y cargamos las librerias a utilizar
+
+## Clear
+
+```{r}
+rm(list = ls())
+
+gc()
+```
+
+## Librarys
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(sf)
+library(stringr)
+library(mapview)
+library(ggspatial)
+library(units)
+```
+
+# Cargamos datos
+
+Los datasets fueron descargados en tandas de la pagina de UNASEV (Unidad Nacional de Seguridad Vial), en la opcion de crear nuevo mapa dentro de su pagina se pueden descargar todos los datos de los siniestros en Uruguay desde 2013, pero esta limitada la cantidad de datos que se pueden descargar, por lo tanto se requiere bajar varios CSV, y sumado que en la ultima tanda de carga de datos cambiaron el formato por eso se separa en dos df distintos que despues de limpios seran unidos
+
+## Dataset Nuevo
+
+```{r}
+setwd("siniestros/nuevos/")
+
+Siniestros_Nuevos <-
+    list.files(pattern = "*.txt") %>% 
+    map_df(~read.delim(.,header = FALSE,sep = ",",encoding = "UTF-8",quote = ""))
+```
+
+## Dataset Antiguo
+
+```{r}
+setwd("siniestros/antiguos/")
+
+Siniestros_Antiguos <-
+    list.files(pattern = "*.txt") %>% 
+    map_df(~read.delim(.,header = FALSE,sep = ",",encoding = "UTF-8",quote = ""))
+```
+
+# Limpieza de Datos
+
+## Siniestros Nuevos
+
+```{r}
+Siniestros_Nuevos <- Siniestros_Nuevos %>%
+  select(-V2) %>%
+  mutate(V12 = as.numeric(V12)) %>%
+  mutate(V11 = as.numeric(V11)) %>%
+  filter(V12 != is.na(V12))
+```
+
+```{r}
+Siniestros_Nuevos <- Siniestros_Nuevos %>%
+  rename(fecha = V1,
+         Calle = V3,
+         Tipo_Siniestro = V4,
+         Gravedad = V5,
+         Dia_semana = V6,
+         Hora = V7,
+         Departamento = V8,
+         Ciudad = V9,
+         Fixed = V10,
+         X = V11,
+         Y = V12)
+```
+
+## Siniestros Antiguos
+
+```{r}
+Siniestros_Antiguos <- Siniestros_Antiguos %>%
+  mutate(V10 = as.numeric(V10)) %>%
+  mutate(V11 = as.numeric(V11)) %>%
+  filter(V11 != is.na(V11))
+```
+
+```{r}
+Siniestros_Antiguos <- Siniestros_Antiguos %>%
+  rename(fecha = V1,
+         Calle = V2,
+         Tipo_Siniestro = V3,
+         Gravedad = V4,
+         Dia_semana = V5,
+         Hora = V6,
+         Departamento = V7,
+         Ciudad = V8,
+         Fixed = V9,
+         X = V10,
+         Y = V11)
+```
+
+
+# Siniestros
+
+## Rbind para unir los dos datasets
+
+```{r}
+Siniestros <- Siniestros_Nuevos %>%
+  rbind(Siniestros_Antiguos)
+```
+
+## Limpieza de espacios y ajustes de las variables temporales
+
+```{r}
+Siniestros <- Siniestros %>%
+  mutate(Hora = as.numeric(Hora)) %>%
+  mutate(fecha = dmy(fecha)) %>%
+  select(-Fixed)
+```
+
+```{r}
+Siniestros <- Siniestros %>%
+  mutate(Calle = sub(".*? ", "",Calle)) %>%
+  mutate(Tipo_Siniestro = sub(".*? ", "",Tipo_Siniestro)) %>%
+  mutate(Gravedad = sub(".*? ", "",Gravedad)) %>%
+  mutate(Dia_semana = sub(".*? ", "",Dia_semana)) %>%
+  mutate(Departamento = sub(".*? ", "",Departamento)) %>%
+  mutate(Ciudad = sub(".*? ", "",Ciudad))
+```
+
+```{r}
+Siniestros <- Siniestros %>%
+  mutate(anio = format(floor_date(fecha,"year"),"%Y")) %>%
+  mutate(Mes = floor_date(fecha,"month"))
+```
+
+# Geospatial transform
+
+Con el dataset completo se crea un SF para utilizar el df espacial y se guarda un geojson limpio y pronto para ser utilizado en otras oportunidades
+
+```{r}
+Siniestros <- st_as_sf(Siniestros,coords = c("X","Y"), crs = 32721)
+
+Siniestros <- Siniestros %>%
+  st_transform(4326)
+
+write_sf(Siniestros,"base_siniestros.geojson")
+```
+
