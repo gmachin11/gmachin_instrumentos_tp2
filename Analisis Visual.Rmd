@@ -17,6 +17,8 @@ library(stringr)
 library(mapview)
 library(ggspatial)
 library(units)
+library(patchwork)
+library(geofacet)
 ```
 
 # Carga de datos
@@ -47,5 +49,84 @@ Departamentos <- Departamentos %>%
 sf_use_s2(FALSE)
 
 Siniestros <- st_intersection(Siniestros,Departamentos)
+
+sf_use_s2(TRUE)
 ```
 
+```{r}
+Siniestros_por_departamento <- Siniestros %>%
+  st_set_geometry(NULL) %>%
+  group_by(Nombre) %>%
+  summarise(Total = n())
+
+Gravedad_por_departamento <- Siniestros %>%
+  st_set_geometry(NULL) %>%
+  group_by(Nombre,
+           Gravedad) %>%
+  summarise(Total = n())
+
+Gravedad_por_departamento_wider <- pivot_wider(Gravedad_por_departamento,
+                                               names_from = Gravedad,
+                                               values_from = Total)
+```
+
+```{r}
+Departamentos <- left_join(Siniestros_por_departamento,Departamentos,by = "Nombre")
+```
+
+```{r}
+Departamentos <- left_join(Gravedad_por_departamento_wider,Departamentos,by = "Nombre")
+```
+
+Primero observamos la cantidad de siniestros por año
+
+```{r}
+ggplot(Siniestros %>%
+         filter(anio != 2022))+
+  geom_bar(aes(x=anio,fill=Gravedad))+
+  scale_fill_manual(values = c("#FF0800","#FFAE00","#F0FF00","#00C61E"))
+```
+
+En los ultimos 3 años el volumen de siniestros se redujo, ahora analizaremos la gravedad de los mismos, para esto utilizaremos dos indicadores, uno el porcentaje de accidentes Graves o Fatales y dos un indicador ponderado donde se le asignara un valor de 100 a los accidentes fatales, un valor de 50 a los graves, un valor de 5 a los leves y un valor de 1 a los siniestros sin lesionados.
+
+```{r}
+Siniestros <- Siniestros %>%
+  mutate(Grave_Fatal = if_else(Gravedad == "FATAL" | Gravedad == "GRAVE","Grave o Fatal","Menor")) %>%
+  mutate(Indicador_Gravedad = if_else(Gravedad == "FATAL",100,
+                                      if_else(Gravedad == "GRAVE",50,
+                                              if_else(Gravedad == "LEVE",5,1))))
+```
+
+```{r}
+
+```
+
+
+Graficamos el total de Siniestros por departamento
+
+```{r}
+mygrid <- data.frame(
+  code = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19),
+  name = c("Artigas", "Salto", "Rivera", "Cerro Largo", "Paysandu", "Tacuarembo", "Treinta y tres", "Durazno", "Rio Negro", "Rocha", "Florida", "Lavalleja", "Flores", "Soriano", "Canelones", "San Jose", "Colonia", "Maldonado", "Montevideo"),
+  row = c(1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6),
+  col = c(1, 1, 2, 3, 1, 2, 3, 2, 1, 4, 3, 4, 2, 1, 3, 2, 1, 4, 3),
+  stringsAsFactors = FALSE
+)
+```
+
+```{r}
+ggplot(Siniestros)+
+  geom_bar(aes(y=Gravedad,fill=Gravedad))+  
+  scale_fill_manual(values = c("#FF0800","#FFAE00","#F0FF00","#00C61E"))+
+  labs(title = "Total de Siniestros segun gravedad por Departamento",
+       x="Total",
+       y="Gravedad")+
+  theme_bw()+
+  facet_geo(~Nombre,grid = mygrid)+
+  theme(axis.text = element_text(size = 6))+
+  theme(strip.text.x = element_text(size = 8))+
+  theme(legend.justification = "top")+
+  theme(legend.text = element_text(size=8))
+```
+
+Observamos que Montevideo es el deparamento con mas siniestros
