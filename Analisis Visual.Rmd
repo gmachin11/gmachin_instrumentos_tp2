@@ -19,12 +19,21 @@ library(ggspatial)
 library(units)
 library(patchwork)
 library(geofacet)
+source("get_data_functions.R")
 ```
 
 # Carga de datos
 
 ```{r}
-Siniestros <- read_sf("base_siniestros.geojson")
+Siniestros_Antiguos <- get_siniestros_antiguos()
+```
+
+```{r}
+Siniestros_Nuevos <- get_siniestros_nuevos()
+```
+
+```{r}
+Siniestros <- get_siniestros()
 Departamentos <- read_sf("Departamentos/departamentos_Polygons.shp")
 ```
 
@@ -84,7 +93,8 @@ Primero observamos la cantidad de siniestros por año
 ggplot(Siniestros %>%
          filter(anio != 2022))+
   geom_bar(aes(x=anio,fill=Gravedad))+
-  scale_fill_manual(values = c("#FF0800","#FFAE00","#F0FF00","#00C61E"))
+  scale_fill_manual(values = c("#FF0800","#FFAE00","#F0FF00","#00C61E"))+
+  theme_bw()
 ```
 
 En los ultimos 3 años el volumen de siniestros se redujo, ahora analizaremos la gravedad de los mismos, para esto utilizaremos dos indicadores, uno el porcentaje de accidentes Graves o Fatales y dos un indicador ponderado donde se le asignara un valor de 100 a los accidentes fatales, un valor de 50 a los graves, un valor de 5 a los leves y un valor de 1 a los siniestros sin lesionados.
