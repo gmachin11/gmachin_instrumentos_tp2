@@ -1,4 +1,6 @@
 
+**Este Rmd se hizo con el fin de armar la limpieza de datos, una ves se trato de comitear el proyecto se generaban dos geojsons que despues se levantaban en el rmd "Analisis Visual" pero como superaban los 100 mb no se pudo subir, por lo tanto hubo que improvisar, y como se tenia la base desarmada en varios txts porque la pagina estaba limitada para el volumen de descarga se decidio crear una formula para levantar cada base con todos los pasos escritos debajo para cada csv**
+
 # Limpiamos la memoria y el enviroment y cargamos las librerias a utilizar
 
 ## Clear
@@ -88,38 +90,6 @@ Siniestros_Antiguos <- Siniestros_Antiguos %>%
 }
 ```
 
-
-```{r}
-get_siniestros <- function() {
-
-Siniestros <- Siniestros_Nuevos %>%
-  rbind(Siniestros_Antiguos)
-
-Siniestros <- Siniestros %>%
-  mutate(Hora = as.numeric(Hora)) %>%
-  mutate(fecha = dmy(fecha)) %>%
-  select(-Fixed)
-
-Siniestros <- Siniestros %>%
-  mutate(Calle = sub(".*? ", "",Calle)) %>%
-  mutate(Tipo_Siniestro = sub(".*? ", "",Tipo_Siniestro)) %>%
-  mutate(Gravedad = sub(".*? ", "",Gravedad)) %>%
-  mutate(Dia_semana = sub(".*? ", "",Dia_semana)) %>%
-  mutate(Departamento = sub(".*? ", "",Departamento)) %>%
-  mutate(Ciudad = sub(".*? ", "",Ciudad))
-
-Siniestros <- Siniestros %>%
-  mutate(anio = format(floor_date(fecha,"year"),"%Y")) %>%
-  mutate(Mes = floor_date(fecha,"month"))
-
-Siniestros <- st_as_sf(Siniestros,coords = c("X","Y"), crs = 32721)
-
-Siniestros <- Siniestros %>%
-  st_transform(4326)
-}
-```
-
-
 ```{r}
 setwd("siniestros/nuevos/")
 
@@ -189,7 +159,6 @@ Siniestros_Antiguos <- Siniestros_Antiguos %>%
          Y = V11)
 ```
 
-
 # Siniestros
 
 ## Rbind para unir los dos datasets
@@ -236,6 +205,61 @@ Siniestros <- Siniestros %>%
 ```
 
 # Siniestros Personas
+
+```{r}
+setwd("siniestros_personas/")
+
+Siniestros_Personas <-
+    list.files(pattern = "*.txt") %>% 
+    map_df(~read.delim(.,header = FALSE,sep = ",",encoding = "UTF-8",quote = ""))
+
+Siniestros_Personas <- Siniestros_Personas %>%
+  rename(Fecha = V1,
+         Edad = V3,
+         Rol = V4,
+         Calle = V5,
+         Zona = V6,
+         Gravedad = V7,
+         Tipo_Siniestro = V8,
+         Usa_Cinturon = V9,
+         Usa_Casco = V10,
+         Dia_semana = V11,
+         Sexo = V12,
+         Hora = V13,
+         Departamento = V14,
+         Localidad = V15,
+         Tipo_Vehiculo = V16,
+         fixed = V17,
+         x = V18,
+         y = V19) %>%
+  filter(!is.na(y)) %>%
+  select(-V2,fixed)
+
+Siniestros_Personas <- Siniestros_Personas %>%
+  mutate(Rol = sub(".*? ", "",Rol)) %>%
+  mutate(Calle = sub(".*? ", "",Calle)) %>%
+  mutate(Zona = sub(".*? ", "",Zona)) %>%
+  mutate(Tipo_Siniestro = sub(".*? ", "",Tipo_Siniestro)) %>%
+  mutate(Gravedad = sub(".*? ", "",Gravedad)) %>%
+  mutate(Usa_Cinturon = sub(".*? ", "",Usa_Cinturon)) %>%
+  mutate(Usa_Casco = sub(".*? ", "",Usa_Casco)) %>%
+  mutate(Dia_semana = sub(".*? ", "",Dia_semana)) %>%
+  mutate(Departamento = sub(".*? ", "",Departamento)) %>%
+  mutate(Localidad = sub(".*? ", "",Localidad)) %>%
+  mutate(Tipo_Vehiculo = sub(".*? ", "",Tipo_Vehiculo))
+
+Siniestros_Personas <- Siniestros_Personas %>%
+  mutate(Edad = as.numeric(Edad)) %>%
+  mutate(Hora = as.numeric(Hora)) %>%
+  mutate(x = as.numeric(x)) %>%
+  mutate(y = as.numeric(y)) %>%
+  mutate(Fecha = dmy(Fecha))
+
+Siniestros_Personas <- st_as_sf(Siniestros_Personas,coords = c("x","y"), crs = 32721)
+
+Siniestros_Personas <- Siniestros_Personas %>%
+  st_transform(4326)
+```
 
 ```{r}
 get_personas <- function() {
@@ -293,8 +317,3 @@ Siniestros_Personas <- Siniestros_Personas %>%
   st_transform(4326)
 }
 ```
-
-```{r}
-Siniestros_S <- get_siniestros()
-```
-

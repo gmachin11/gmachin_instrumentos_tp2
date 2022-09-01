@@ -1,3 +1,8 @@
+#Todas las formulas presentadas en este script fueron construidas primero en el rmd "TP2_limpieza" para corroborar su correcto funcionamiento
+#por eso tienen una estructura bastante parecida a un chunk
+
+#Formula para levantar los txt de siniestros mas recientes
+
 get_siniestros_nuevos <- function() {
   
   setwd("siniestros/nuevos/")
@@ -27,6 +32,8 @@ get_siniestros_nuevos <- function() {
   
 }
 
+#Formula para levantar los txt de siniestros mas antiguos
+
 get_siniestros_antiguos <- function() {
   
   setwd("siniestros/antiguos/")
@@ -55,6 +62,9 @@ get_siniestros_antiguos <- function() {
   
 }
 
+# formula para levantar, limpiar y unir las dos bases de siniestros en un solo DF
+# Primero se deben correr las formulas de get_siniestros_antiguos y get_siniestros_nuevo dado que dentro de esta se pedira especificamente estos dos datasets
+
 get_siniestros <- function() {
   
   Siniestros <- Siniestros_Nuevos %>%
@@ -82,6 +92,8 @@ get_siniestros <- function() {
   Siniestros <- Siniestros %>%
     st_transform(4326)
 }
+
+#Formula para levantar los txt de la base de personas afectadas por los siniestros 
 
 get_personas <- function() {
   setwd("siniestros_personas/")

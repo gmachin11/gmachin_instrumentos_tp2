@@ -37,6 +37,10 @@ Siniestros <- get_siniestros()
 Departamentos <- read_sf("Departamentos/departamentos_Polygons.shp")
 ```
 
+```{r}
+Personas <- get_personas()
+```
+
 # Visualizamos las dos capas
 
 ```{r}
@@ -79,14 +83,6 @@ Gravedad_por_departamento_wider <- pivot_wider(Gravedad_por_departamento,
                                                values_from = Total)
 ```
 
-```{r}
-Departamentos <- left_join(Siniestros_por_departamento,Departamentos,by = "Nombre")
-```
-
-```{r}
-Departamentos <- left_join(Gravedad_por_departamento_wider,Departamentos,by = "Nombre")
-```
-
 Primero observamos la cantidad de siniestros por año
 
 ```{r}
@@ -108,9 +104,11 @@ Siniestros <- Siniestros %>%
 ```
 
 ```{r}
+Departamentos <- left_join(Departamentos,Gravedad_por_departamento_wider,by = "Nombre")
 
+Departamentos <- Departamentos %>%
+  mutate(Total = rowSums(across(where(is.numeric))))
 ```
-
 
 Graficamos el total de Siniestros por departamento
 
@@ -122,6 +120,13 @@ mygrid <- data.frame(
   col = c(1, 1, 2, 3, 1, 2, 3, 2, 1, 4, 3, 4, 2, 1, 3, 2, 1, 4, 3),
   stringsAsFactors = FALSE
 )
+```
+
+```{r}
+ggplot(Departamentos)+
+  geom_sf(aes(fill = Total))+
+  scale_fill_gradient(low="mistyrose1", high="firebrick2")+
+  theme_bw()
 ```
 
 ```{r}
