@@ -144,4 +144,6 @@ ggplot(Siniestros)+
   theme(legend.text = element_text(size=8))
 ```
 
-Observamos que Montevideo es el deparamento con mas siniestros
+Observamos que Montevideo es el deparamento con mas siniestros, aunque esto es directamente proporcional a la poblacion, dado que tambien el segundo y tercer departamento con mas siniestros son efectivamente los segundos y terceros que mas poblacion tienen.
+
+
