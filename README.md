@@ -4,4 +4,4 @@
 
 ### Datos extraidos de UNASEV
 
-https://aplicacionesunasev.presidencia.gub.uy/mapas/AdministracionMapaIndicadores/AdministracionMapaIndicadores_Alta
+https://aplicacionesunasev.presidencia.gub.uy/mapas/
